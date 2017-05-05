@@ -1,11 +1,10 @@
 <?php
-require_once 'pdo.php';
-require_once 'navbar.php';
-
-require 'vendor/autoload.php';
+require_once 'myAutoloader.php';
+require_once 'vendor/autoload.php';
 use Intervention\Image\ImageManagerStatic as Image;
 Image::configure(array('driver' => 'gd'));
-require 'filter.php';
+session_start();
+
 header("Last-Modified: " . gmdate("D, d M Y H:i:s") . " GMT");
 header("Cache-Control: no-store, no-cache, must-revalidate max-age=0");
 header("Cache-Control: post-check=0, pre-check=0", false);
@@ -14,6 +13,8 @@ header("Pragma: no-cache");
 use League\ColorExtractor\Color;
 use League\ColorExtractor\ColorExtractor;
 use League\ColorExtractor\Palette;
+
+require_once 'navbar.php';
 ?>
 
 <!DOCTYPE html>
@@ -68,11 +69,11 @@ use League\ColorExtractor\Palette;
             if ($queries[0] === 'id')
                 $_SESSION['imageId'] = $queries[1];
             try {
-                $prepare = $connection->prepare('select * from images where id = :id');
+                $prepare = myPDO::getInstance()->getConnection()->prepare('select * from images where id = :id');
                 if ($prepare->execute(array('id'=>$_SESSION['imageId']))) {
                     $image = $prepare->fetch(PDO::FETCH_OBJ);
                     $_SESSION['image_name'] = $image->name;
-                    $filepath = $_SESSION['dir'] . $image->name;
+                    $filepath = $_SESSION['user']->dir . $image->name;
 
                     $palette = Palette::fromFilename($filepath);
                     $extractor = new ColorExtractor($palette);
@@ -92,9 +93,9 @@ use League\ColorExtractor\Palette;
 
 
                     if (isset($_POST['delete'])) {
-                        $prepare = $connection->prepare('delete from images where id = :id');
+                        $prepare = myPDO::getInstance()->getConnection()->prepare('delete from images where id = :id');
                         if ($prepare->execute(array('id'=>$_GET['id']))) {
-                            unlink($_SESSION['dir'].$_SESSION['image_name']);
+                            unlink($_SESSION['user']->dir.$_SESSION['image_name']);
                             unset($_SESSION['image_name']);
                             header('Location:gallery.php');
                             exit;
@@ -127,7 +128,7 @@ header("Pragma: no-cache");
 if (isset($_GET['filter'])) {
     $filterId = $_GET['filter'];
     $image = Image::make($_SESSION['dir'] . $_SESSION['image_name']);
-    $filter = new filter();
+    $filter = new Filter();
     $image = $filter->apply_filter($filterId, $image);
     $imageid = $_SESSION['imageId'];
     unset($_SESSION['imageId']);

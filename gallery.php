@@ -1,5 +1,6 @@
 <?php
-require_once 'pdo.php';
+require_once 'myAutoloader.php';
+session_start();
 
 header("Last-Modified: " . gmdate("D, d M Y H:i:s") . " GMT");
 header("Cache-Control: no-store, no-cache, must-revalidate max-age=0");
@@ -57,7 +58,7 @@ if (!isset($_SESSION['user']))
     <div class="cd-slider-nav">
         <nav class="navbar">
             <div class="tm-navbar-bg">
-                <a class="navbar-brand text-uppercase" href="#"><i class="fa fa-picture-o tm-brand-icon"></i>Galerie de <?= $_SESSION['user'] ?></a>
+                <a class="navbar-brand text-uppercase" href="#"><i class="fa fa-picture-o tm-brand-icon"></i>Galerie de <?= $_SESSION['user']->login ?></a>
                 <div id="tmNavbar">
                     <a class="nav-link" href="home.php">Galeries</a>
                     <a class="nav-link" href="gallery.php">Espace perso</a>
@@ -77,15 +78,15 @@ if (!isset($_SESSION['user']))
                         <div class="tm-img-gallery gallery-one" id="div_gallery">
                             <?php
                             try {
-                                $prepare = $connection->prepare('select * from images where userId = :userId');
-                                if ($prepare->execute(array('userId' => $_SESSION['userId']))) {
+                                $prepare = myPDO::getInstance()->getConnection()->prepare('select * from images where userId = :userId');
+                                if ($prepare->execute(array('userId' => $_SESSION['user']->id))) {
                                     $html = "";
                                     while ($image = $prepare->fetch(PDO::FETCH_OBJ)) {
                                         $name = $image->name;
                                         $html .= "<div class=\"grid-item\">\n";
                                         $html .= "<figure class=\"effect-sadie\">\n";
 
-                                        $html .= '<img src="' . $_SESSION['dir'] . $image->name .
+                                        $html .= '<img src="' . $_SESSION['user']->dir . $image->name .
                                             "\" alt=\"" . $image->name . "\" class=\"img-fluid tm-img\">\n" .
                                             "<figcaption>\n" .
                                             "<h2 class=\"tm-figure-title\">$image->name</h2>" .
