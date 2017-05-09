@@ -9,5 +9,5 @@ return array(
     'Psr\\Http\\Message\\' => array($vendorDir . '/psr/http-message/src'),
     'Intervention\\Image\\' => array($vendorDir . '/intervention/image/src/Intervention/Image'),
     'GuzzleHttp\\Psr7\\' => array($vendorDir . '/guzzlehttp/psr7/src'),
-    '' => array($vendorDir . '/league/color-extractor/src'),
+    'ColorThief\\' => array($vendorDir . '/ksubileau/color-thief-php/lib/ColorThief'),
 );

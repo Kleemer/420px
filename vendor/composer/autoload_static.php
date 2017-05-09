@@ -23,6 +23,10 @@ class ComposerStaticInite971d5b32c2704a5fa7c28de356ed5df
         array (
             'GuzzleHttp\\Psr7\\' => 16,
         ),
+        'C' => 
+        array (
+            'ColorThief\\' => 11,
+        ),
     );
 
     public static $prefixDirsPsr4 = array (
@@ -38,10 +42,10 @@ class ComposerStaticInite971d5b32c2704a5fa7c28de356ed5df
         array (
             0 => __DIR__ . '/..' . '/guzzlehttp/psr7/src',
         ),
-    );
-
-    public static $fallbackDirsPsr4 = array (
-        0 => __DIR__ . '/..' . '/league/color-extractor/src',
+        'ColorThief\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/ksubileau/color-thief-php/lib/ColorThief',
+        ),
     );
 
     public static function getInitializer(ClassLoader $loader)
@@ -49,7 +53,6 @@ class ComposerStaticInite971d5b32c2704a5fa7c28de356ed5df
         return \Closure::bind(function () use ($loader) {
             $loader->prefixLengthsPsr4 = ComposerStaticInite971d5b32c2704a5fa7c28de356ed5df::$prefixLengthsPsr4;
             $loader->prefixDirsPsr4 = ComposerStaticInite971d5b32c2704a5fa7c28de356ed5df::$prefixDirsPsr4;
-            $loader->fallbackDirsPsr4 = ComposerStaticInite971d5b32c2704a5fa7c28de356ed5df::$fallbackDirsPsr4;
 
         }, null, ClassLoader::class);
     }

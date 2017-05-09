@@ -1,19 +1,5 @@
 <?php
 
-function generateMenu() {
-    $menu = array(
-        'home'  => array('text'=>'Accueil',  'url'=>'home.php'),
-        'upload'  => array('text'=>'Importer',  'url'=>'upload.php'),
-        'gallery'  => array('text'=>'Galerie',  'url'=>'gallery.php')
-    );
-    $html = "<nav>\n";
-    foreach($menu as $item) {
-        $html .= "<a href='{$item['url']}'>{$item['text']}</a>\n";
-    }
-    $html .= "</nav>\n";
-    return $html;
-}
-
 function generateFilter($id) {
     $menu = array(
         '+Contrast'  => array('text'=>'+ contraste',   'url'=>'?filter=1'),

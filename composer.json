@@ -1,7 +1,6 @@
 {
   "require": {
     "intervention/image": "^2.0",
-    "league/color-extractor": "0.3.*"
+    "ksubileau/color-thief-php": "^1.3"
   }
 }
-
