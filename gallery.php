@@ -6,6 +6,12 @@
     header("Cache-Control: no-store, no-cache, must-revalidate max-age=0");
     header("Cache-Control: post-check=0, pre-check=0", false);
     header("Pragma: no-cache");
+
+    if (!isset($_SESSION['user']))
+    {
+        header('Location:access_refused.php');
+        exit;
+    }
 ?>
 
 <!DOCTYPE html>
@@ -20,6 +26,7 @@
 
     <link rel="stylesheet" href="css/bulma.css">
     <link rel="stylesheet" href="css/templatemo-style.css">
+    <link rel="stylesheet" href="css/custom.css">
 
 </head>
 <body>
@@ -31,6 +38,7 @@
             if ($prepare->execute(array('userId' => $_SESSION['user']->id))) {
                 $html = "";
                 $dir = $_SESSION['user']->dir;
+
                 while ($image = $prepare->fetch(PDO::FETCH_OBJ)) {
                     $name = $image->name;
                     $html .= "<div class=\"grid-item\">\n";

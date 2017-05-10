@@ -2,8 +2,9 @@
 require_once 'myAutoLoader.php';
 require_once 'navbar.php';
 require_once 'vendor/autoload.php';
-
+use ColorThief\ColorThief;
 use Intervention\Image\ImageManagerStatic as Image;
+
 Image::configure(array('driver' => 'gd'));
 header("Last-Modified: " . gmdate("D, d M Y H:i:s") . " GMT");
 header("Cache-Control: no-store, no-cache, must-revalidate max-age=0");
@@ -54,7 +55,6 @@ try
 }
 catch (Exception $e)
 {
-    $_SESSION['errorUpload'] = 'Une erreur est survenue, veuillez réessayer ulterieurement.';
 }
 
 if (isset($_GET['filter']))
@@ -62,6 +62,17 @@ if (isset($_GET['filter']))
     $filterId = $_GET['filter'];
     $image = Image::make($_SESSION['user']->dir . $_SESSION['image_name']);
     $image = Filter::apply_filter($filterId, $image);
+    try
+    {
+        $dominantColor = ColorThief::getColor($_SESSION['user']->dir . $_SESSION['image_name']);
+        $prepare = myPDO::getInstance()->getConnection()->prepare('update images set red = :red, green = :green, blue = :blue where name = :name and userId = :userId');
+        $prepare->execute(array('red' => $dominantColor[0], 'green' => $dominantColor[1], 'blue' => $dominantColor[2], 'name' => $_SESSION['image_name'], 'userId' => $_SESSION['user']->id));
+    }
+    catch (Exception $e)
+    {
+    }
+
+    
     $imageid = $_SESSION['imageId'];
     unset($_SESSION['imageId']);
     header('Location:image.php?id='.$imageid);
