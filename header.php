@@ -58,49 +58,11 @@ if (isset($_POST['search']))
 }
 
 if (isset($_GET['zip']))
-{
-  $zipname = 'zip/'.$_SESSION['user']->login.'.zip';
-  $zip = new ZipArchive;
-  $zip->open($zipname, ZipArchive::CREATE);
-  $dir = 'images/'.$_SESSION['user']->login.'/';
-  if ($handle = opendir($dir))
-  {
-    while (($entry = readdir($handle)) !== false)
-      if ($entry != "." && $entry != "..")
-        $zip->addFile($dir.$entry, $entry);
-    closedir($handle);
-  }
-  $zip->close();
-
-  header('Content-Type: application/zip');
-  header("Content-Disposition: attachment; filename=".$zipname);
-  header('Content-Length: ' . filesize($zipname));
-  header("Location:" . $zipname);
-}
+  Tools::downloadZip($_SESSION['user']->login);
 
 if (isset($_GET['xml']))
-{
-  $xmlname = 'xml/'.$_SESSION['user']->login.'.xml';
-  $xml = new DOMDocument();
-  $xml_images = $xml->createElement("Images");
-  $dir = 'images/'.$_SESSION['user']->login.'/';
-    if ($handle = opendir($dir))
-    {
-      while (($entry = readdir($handle)) !== false)
-        if ($entry != "." && $entry != "..")
-        {
-          $xml_image = $xml->createElement("Name");
-          $xml_image->nodeValue = $entry;
-          $xml_images->appendChild( $xml_image );
-        }
-      closedir($handle);
-    }
-  $xml->appendChild( $xml_images );
-  $xml->save($xmlname);
+  Tools::downloadRss($_SESSION['user']->login);
 
-  header('Content-type: text/xml');
-  header("Content-Disposition: attachment; filename=".$xmlname);
-}
 ?>
 
 
