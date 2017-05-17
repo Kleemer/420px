@@ -19,14 +19,13 @@ if (!isset($_SESSION['user']))
     exit;
 }
 
-
 $actual_link = (isset($_SERVER['HTTPS']) ? "https" : "http") . "://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]";
 $query = parse_url($actual_link, PHP_URL_QUERY);
 $queries = explode("=", $query);
 
 if ($queries[0] === 'id')
     if (!isset($_SESSION['image']) || $_SESSION['image']->id !== $queries[1])
-    $_SESSION['image'] = new Image($queries[1], "", array());
+    $_SESSION['image'] = new Image($queries[1], array());
 
 if (isset($_POST['undo']))
 {
@@ -37,6 +36,25 @@ if (isset($_POST['undo']))
 
 if (isset($_POST['reset']))
     $_SESSION['image']->filters = array();
+
+if (isset($_POST['save']))
+{
+    $img = ImageManagerStatic::make($_SESSION['user']->dir . $_SESSION['image']->name);
+    Filter::apply_filters($_SESSION['image']->filters, $img);
+    $img->save();
+
+    try
+    {
+        $dominantColor = ColorThief::getColor($_SESSION['user']->dir . $_SESSION['image']->name);
+        $prepare = myPDO::getInstance()->getConnection()->prepare('update images set red = :red, green = :green, blue = :blue where name = :name and userId = :userId');
+        $prepare->execute(array('red' => $dominantColor[0], 'green' => $dominantColor[1], 'blue' => $dominantColor[2], 'name' => $_SESSION['image']->name, 'userId' => $_SESSION['user']->id));
+    }
+    catch (Exception $e)
+    {
+    }
+
+    $_SESSION['image']->filters = array();
+}
 
 if (isset($_POST['delete']))
 {
@@ -52,44 +70,46 @@ if (isset($_POST['delete']))
 
 try
 {
-    var_dump($_SESSION['image']);
-    $prepare = myPDO::getInstance()->getConnection()->prepare('select * from images where id = :id');
-    if ($prepare->execute(array('id'=>$_SESSION['image']->id)))
+    if (!isset($_SESSION['image']->name))
     {
-        $image = $prepare->fetch(PDO::FETCH_OBJ);
-        $_SESSION['image']->name = $image->name;
-
-        $img = ImageManagerStatic::make($_SESSION['user']->dir . $_SESSION['image']->name);
-        Filter::apply_filters($_SESSION['image']->filters, $img);
-        $img->encode('png');
-        $type = 'png';
-        $base64 = 'data:image/' . $type . ';base64,' . base64_encode($img);
-
-        $html = "<div style=\"text-align:center\">\n" .
-            '<img src="' . "$base64 \"/>".
-            "</div></br>";
-
-        $html.= generateFilter();
-
-        $html.= "<div style=\"text-align:center\">\n" .
-            "<form method=\"post\">
-            <button class=\"button is-primary\" type=\"submit\" name=\"undo\">Annuler dernier</button>
-            <button class=\"button is-primary\" type=\"submit\" name=\"reset\">Annuler tout</button>
-
-            </form>\n
-            </div></br>";
-        $html.= "<div style=\"text-align:center\">\n" .
-            "<form method=\"post\">
-            <button class=\"button is-danger\" type=\"submit\" name=\"delete\">Supprimer</button>
-            </form>\n
-            </div>";
+        $prepare = myPDO::getInstance()->getConnection()->prepare('select * from images where id = :id');
+        if ($prepare->execute(array('id'=>$_SESSION['image']->id)))
+        {
+            $image = $prepare->fetch(PDO::FETCH_OBJ);
+            $_SESSION['image']->name = $image->name;
+        }
     }
-    else
-        $html = "There is no image here with this id.";
 }
 catch (Exception $e)
 {
 }
+
+$img = ImageManagerStatic::make($_SESSION['user']->dir . $_SESSION['image']->name);
+Filter::apply_filters($_SESSION['image']->filters, $img);
+$img->encode('png');
+$type = 'png';
+$base64 = 'data:image/' . $type . ';base64,' . base64_encode($img);
+
+$html = "<div style=\"text-align:center\">\n" .
+    '<img src="' . "$base64 \"/>".
+    "</div></br>";
+
+$html.= generateFilter();
+
+$html.= "<div style=\"text-align:center\">\n" .
+    "<form method=\"post\">
+    <button class=\"button is-info\"    type=\"submit\" name=\"save\"><i class=\"fa fa-floppy-o\" aria-hidden=\"true\"></i></button>
+    <button class=\"button is-primary\" type=\"submit\" name=\"undo\"><i class=\"fa fa-backward\" aria-hidden=\"true\"></i></button>
+    <button class=\"button is-primary\" type=\"submit\" name=\"reset\"><i class=\"fa fa-fast-backward\" aria-hidden=\"true\"></i></button>
+    </form>\n
+    </div></br>";
+
+$html.= "<div style=\"text-align:center\">\n" .
+    "<form method=\"post\">
+    <button class=\"button is-danger\" type=\"submit\" name=\"delete\"><i class=\"fa fa-trash\" aria-hidden=\"true\"></i></button>
+    </form>\n
+    </div>";
+
 
 if (isset($_GET['filter']))
 {
@@ -122,7 +142,7 @@ if (isset($_GET['filter']))
     
     <link rel="stylesheet" href="css/bulma.css">
     <link rel="stylesheet" href="css/custom.css">
-
+    <link rel="stylesheet" href="css/font-awesome.css">
 </head>
 <body>
 

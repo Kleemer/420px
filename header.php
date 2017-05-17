@@ -27,13 +27,13 @@ if (isset($_SESSION['user']))
           <a class=\"nav-item\" href=\"upload.php\">
             Importer
           </a>
-          <a class=\"nav-item\" src=\"img/exit.png\" href=\"?zip=true\">
+          <a class=\"nav-item\" href=\"?zip=true\">
             <img src=\"img/zip.png\">
           </a>
-          <a class=\"nav-item\" src=\"img/exit.png\" href=\"?xml=true\">
+          <a class=\"nav-item\" href=\"?xml=true\">
             <img src=\"img/rss.png\">
           </a>
-          <a class=\"nav-item\" src=\"img/exit.png\" href=\"logoff.php\">
+          <a class=\"nav-item\" href=\"logoff.php\">
             <img src=\"img/exit.png\">
           </a>
           ";

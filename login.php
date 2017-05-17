@@ -2,6 +2,12 @@
 require_once 'myAutoloader.php';
 session_start();
 
+if (isset($_SESSION['user']))
+{
+    header('Location:home.php');
+    exit;
+}
+
 if (isset($_POST['login']) && isset($_POST['password']))
 {
     $login = $_POST['login'];

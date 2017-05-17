@@ -6,10 +6,9 @@ class Image
     public $name;
     public $filters;
 
-    public function __construct($id, $name, $filters)
+    public function __construct($id, $filters)
     {
         $this->id = $id;
-        $this->name = $name;
         $this->filters = $filters;
     }
 }
