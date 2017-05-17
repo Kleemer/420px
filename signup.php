@@ -11,10 +11,8 @@
         {
             $prepare = $connection->prepare('insert into users(login, password) values(:login,:password)');
 
-            if ($prepare->execute(array('login'=>$login, 'password'=>$password))) {
-                if (isset($_SESSION['errorSignup']))
-                    unset($_SESSION['errorSignup']);
-                $_SESSION['signupSuccess'] = 'Vous vous êtes inscrit. Veuillez vous connecter maintenant.';
+            if ($prepare->execute(array('login'=>$login, 'password'=>$password)))
+            {
                 mkdir('images//' . $login);
                 header("Location:login.php");
                 exit();
@@ -22,7 +20,7 @@
         }
         catch (Exception $e)
         {
-            $_SESSION['errorSignup'] = 'Ce pseudo est déjà pris.';
+            $_SESSION['error'] = 'Ce pseudo est déjà pris.';
             header('Refresh:0');
             exit;
         }
@@ -53,12 +51,8 @@
         <div class="container has-text-centered">
 
             <?php
-                if (isset($_SESSION['errorSignup']))
-                {
-                    echo "<p class=\"tm-text\" style='color:#bf0000'>".$_SESSION['errorSignup']."</p>";
-                    unset($_SESSION['errorSignup']);
-                }
-                ?>
+                include "error.php";
+            ?>
             <h2 class="title">
                 Inscription
             </h2>

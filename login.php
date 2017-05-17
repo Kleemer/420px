@@ -25,11 +25,11 @@ if (isset($_POST['login']) && isset($_POST['password']))
                 exit();
             }
         }
-        $_SESSION['errorLogin'] = 'Erreur, mauvais login ou mot de passe';
+        $_SESSION['error'] = 'Erreur, mauvais login ou mot de passe';
     }
     catch (Exception $e)
     {
-        $_SESSION['errorLogin'] = 'Une erreur est survenue, veuillez réessayer ulterieurement.';
+        $_SESSION['error'] = 'Une erreur est survenue, veuillez réessayer ulterieurement.';
     }
 }
 ?>
@@ -58,11 +58,7 @@ if (isset($_POST['login']) && isset($_POST['password']))
         <div class="container has-text-centered">
 
             <?php
-            if (isset($_SESSION['errorLogin']))
-            {
-                echo "<div style=\"color: #D9534F\">".$_SESSION['errorLogin']."</div>";
-                unset($_SESSION['errorLogin']);
-            }
+            include "error.php"
             ?>
 
             <h2 class="title">

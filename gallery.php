@@ -13,6 +13,30 @@ if (!isset($_SESSION['user']))
     header('Location:access_refused.php');
     exit;
 }
+
+$html = "";
+
+try
+{
+    $prepare = myPDO::getInstance()->getConnection()->prepare('select * from images where userId = :userId');
+    if ($prepare->execute(array('userId' => $_SESSION['user']->id)))
+        while ($image = $prepare->fetch(PDO::FETCH_OBJ)) {
+            $html .= "<div class=\"grid-item\">\n";
+            $html .= "<figure class=\"effect-sadie\">\n";
+
+            $html .= '<img src="' . $_SESSION['user']->dir . $image->name .
+                "\" alt=\"" . $image->name . "\" class=\"img-fluid tm-img\">\n" .
+                "<figcaption>\n".
+                '<a href=\'image.php?id=' . $image->id . '\'> </a>' .
+                "</figcaption>\n</figure>\n</div>";
+        }
+}
+catch(Exception $e)
+{
+    $html = "";
+    $_SESSION['error'] = 'Une erreur est survenue, veuillez réessayer ulterieurement.';
+}
+
 ?>
 
 <!DOCTYPE html>
@@ -34,29 +58,8 @@ if (!isset($_SESSION['user']))
 
     <?php
         include "header.php";
-        try {
-            $prepare = myPDO::getInstance()->getConnection()->prepare('select * from images where userId = :userId');
-            if ($prepare->execute(array('userId' => $_SESSION['user']->id))) {
-                $html = "";
-                $dir = $_SESSION['user']->dir;
-
-                while ($image = $prepare->fetch(PDO::FETCH_OBJ)) {
-                    $name = $image->name;
-                    $html .= "<div class=\"grid-item\">\n";
-                    $html .= "<figure class=\"effect-sadie\">\n";
-
-                    $html .= '<img src="' . $dir . $image->name .
-                        "\" alt=\"" . $image->name . "\" class=\"img-fluid tm-img\">\n" .
-                        "<figcaption>\n".
-                        '<a href=\'image.php?id=' . $image->id . '\'> </a>' .
-                        "</figcaption>\n</figure>\n</div>";
-                }
-                echo $html;
-            }
-        }
-        catch(Exception $e)
-        {
-        }
+        include "error.php";
+        echo $html;
     ?>
 </body>
 </html>

@@ -35,7 +35,7 @@ if(isset($_POST["upload"]))
             }
             catch (Exception $e)
             {
-                $_SESSION['errorUpload'] = 'Une erreur est survenue, veuillez réessayer ulterieurement.';
+                $_SESSION['error'] = 'Une erreur est survenue, veuillez réessayer ulterieurement.';
             }
         }
     }
@@ -63,11 +63,7 @@ if(isset($_POST["upload"]))
      <div class="hero-body">
         <div class="container has-text-centered">
             <?php
-            if (isset($_SESSION['errorUpload']))
-            {
-                echo "<div style=\"color: #D9534F\">".$_SESSION['errorUpload']."</div>";
-                unset($_SESSION['errorUpload']);
-            }
+                include "error.php"
             ?>
 
             <h2 class="title">

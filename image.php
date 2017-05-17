@@ -25,7 +25,16 @@ $queries = explode("=", $query);
 
 if ($queries[0] === 'id')
     if (!isset($_SESSION['image']) || $_SESSION['image']->id !== $queries[1])
-    $_SESSION['image'] = new Image($queries[1], array());
+        $_SESSION['image'] = new Image($queries[1], array());
+
+if (isset($_GET['filter']))
+{
+    $filterId = $_GET['filter'];
+    array_push($_SESSION['image']->filters, $_GET['filter']);
+
+    header('Location:image.php?id='.$_SESSION['image']->id);
+    exit;
+}
 
 if (isset($_POST['undo']))
 {
@@ -37,39 +46,33 @@ if (isset($_POST['undo']))
 if (isset($_POST['reset']))
     $_SESSION['image']->filters = array();
 
-if (isset($_POST['save']))
+try
 {
-    $img = ImageManagerStatic::make($_SESSION['user']->dir . $_SESSION['image']->name);
-    Filter::apply_filters($_SESSION['image']->filters, $img);
-    $img->save();
-
-    try
+    if (isset($_POST['save']))
     {
+        $img = ImageManagerStatic::make($_SESSION['user']->dir . $_SESSION['image']->name);
+        Filter::apply_filters($_SESSION['image']->filters, $img);
+        $img->save();
+
         $dominantColor = ColorThief::getColor($_SESSION['user']->dir . $_SESSION['image']->name);
         $prepare = myPDO::getInstance()->getConnection()->prepare('update images set red = :red, green = :green, blue = :blue where name = :name and userId = :userId');
         $prepare->execute(array('red' => $dominantColor[0], 'green' => $dominantColor[1], 'blue' => $dominantColor[2], 'name' => $_SESSION['image']->name, 'userId' => $_SESSION['user']->id));
+
+        $_SESSION['image']->filters = array();
     }
-    catch (Exception $e)
+
+    if (isset($_POST['delete']))
     {
+        $prepare = myPDO::getInstance()->getConnection()->prepare('delete from images where id = :id');
+        if ($prepare->execute(array('id'=>$_SESSION['image']->id)))
+        {
+            unlink($_SESSION['user']->dir.$_SESSION['image']->name);
+            unset($_SESSION['image']);
+            header('Location:gallery.php');
+            exit;
+        }
     }
 
-    $_SESSION['image']->filters = array();
-}
-
-if (isset($_POST['delete']))
-{
-    $prepare = myPDO::getInstance()->getConnection()->prepare('delete from images where id = :id');
-    if ($prepare->execute(array('id'=>$_GET['id'])))
-    {
-        unlink($_SESSION['user']->dir.$_SESSION['image']->name);
-        unset($_SESSION['image']);
-        header('Location:gallery.php');
-        exit;
-    }
-}
-
-try
-{
     if (!isset($_SESSION['image']->name))
     {
         $prepare = myPDO::getInstance()->getConnection()->prepare('select * from images where id = :id');
@@ -79,54 +82,37 @@ try
             $_SESSION['image']->name = $image->name;
         }
     }
+
+    $img = ImageManagerStatic::make($_SESSION['user']->dir . $_SESSION['image']->name);
+    Filter::apply_filters($_SESSION['image']->filters, $img);
+    $img->encode('png');
+    $type = 'png';
+    $base64 = 'data:image/' . $type . ';base64,' . base64_encode($img);
+
+    $html = "<div style=\"text-align:center\">\n" .
+        '<img src="' . "$base64 \"/>".
+        "</div></br>";
+
+    $html.= generateFilter();
+
+    $html.= "<div style=\"text-align:center\">\n" .
+        "<form method=\"post\">
+        <button class=\"button is-info\"    type=\"submit\" name=\"save\"><i class=\"fa fa-floppy-o\" aria-hidden=\"true\"></i></button>
+        <button class=\"button is-primary\" type=\"submit\" name=\"undo\"><i class=\"fa fa-backward\" aria-hidden=\"true\"></i></button>
+        <button class=\"button is-primary\" type=\"submit\" name=\"reset\"><i class=\"fa fa-fast-backward\" aria-hidden=\"true\"></i></button>
+        </form>\n
+        </div></br>";
+
+    $html.= "<div style=\"text-align:center\">\n" .
+        "<form method=\"post\">
+        <button class=\"button is-danger\" type=\"submit\" name=\"delete\"><i class=\"fa fa-trash\" aria-hidden=\"true\"></i></button>
+        </form>\n
+        </div>";
 }
 catch (Exception $e)
 {
-}
-
-$img = ImageManagerStatic::make($_SESSION['user']->dir . $_SESSION['image']->name);
-Filter::apply_filters($_SESSION['image']->filters, $img);
-$img->encode('png');
-$type = 'png';
-$base64 = 'data:image/' . $type . ';base64,' . base64_encode($img);
-
-$html = "<div style=\"text-align:center\">\n" .
-    '<img src="' . "$base64 \"/>".
-    "</div></br>";
-
-$html.= generateFilter();
-
-$html.= "<div style=\"text-align:center\">\n" .
-    "<form method=\"post\">
-    <button class=\"button is-info\"    type=\"submit\" name=\"save\"><i class=\"fa fa-floppy-o\" aria-hidden=\"true\"></i></button>
-    <button class=\"button is-primary\" type=\"submit\" name=\"undo\"><i class=\"fa fa-backward\" aria-hidden=\"true\"></i></button>
-    <button class=\"button is-primary\" type=\"submit\" name=\"reset\"><i class=\"fa fa-fast-backward\" aria-hidden=\"true\"></i></button>
-    </form>\n
-    </div></br>";
-
-$html.= "<div style=\"text-align:center\">\n" .
-    "<form method=\"post\">
-    <button class=\"button is-danger\" type=\"submit\" name=\"delete\"><i class=\"fa fa-trash\" aria-hidden=\"true\"></i></button>
-    </form>\n
-    </div>";
-
-
-if (isset($_GET['filter']))
-{
-    $filterId = $_GET['filter'];
-    array_push($_SESSION['image']->filters, $_GET['filter']);
-    /*try
-    {
-        $dominantColor = ColorThief::getColor($_SESSION['user']->dir . $_SESSION['image_name']);
-        $prepare = myPDO::getInstance()->getConnection()->prepare('update images set red = :red, green = :green, blue = :blue where name = :name and userId = :userId');
-        $prepare->execute(array('red' => $dominantColor[0], 'green' => $dominantColor[1], 'blue' => $dominantColor[2], 'name' => $_SESSION['image_name'], 'userId' => $_SESSION['user']->id));
-    }
-    catch (Exception $e)
-    {
-    }*/
-
-    header('Location:image.php?id='.$_SESSION['image']->id);
-    exit;
+    $html = "";
+    $_SESSION['error'] = 'Une erreur est survenue, veuillez réessayer ulterieurement.';
 }
 ?>
 
@@ -148,6 +134,7 @@ if (isset($_GET['filter']))
 
     <?php
         include "header.php";
+        include "error.php";
         echo $html;
     ?>
 

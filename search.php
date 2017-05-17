@@ -1,52 +1,55 @@
 <?php
-    require_once 'myAutoloader.php';
-    session_start();
+require_once 'myAutoloader.php';
+session_start();
 
-    header("Last-Modified: " . gmdate("D, d M Y H:i:s") . " GMT");
-    header("Cache-Control: no-store, no-cache, must-revalidate max-age=0");
-    header("Cache-Control: post-check=0, pre-check=0", false);
-    header("Pragma: no-cache");
+header("Last-Modified: " . gmdate("D, d M Y H:i:s") . " GMT");
+header("Cache-Control: no-store, no-cache, must-revalidate max-age=0");
+header("Cache-Control: post-check=0, pre-check=0", false);
+header("Pragma: no-cache");
 
-    if (!isset($_SESSION['user']))
+if (!isset($_SESSION['user']))
+{
+    header('Location:access_refused.php');
+    exit;
+}
+
+$html = "";
+
+try
+{
+    $values = explode(" ", $_SESSION['values']);
+    $red   = $values[0];
+    $green = $values[1];
+    $blue  = $values[2];
+    $threshold = 10;
+
+    $prepare = myPDO::getInstance()->getConnection()->prepare
+    ('select * from images join users on images.userId = users.id
+    where red between :red - :threshold and :red + :threshold 
+    and green between :green - :threshold and :green + :threshold
+    and blue between :blue - :threshold and :blue + :threshold');
+    if ($prepare->execute(array('red' => $red,
+                                'green' => $green,
+                                'blue' => $blue, 'threshold' => $threshold)))
     {
-        header('Location:access_refused.php');
-        exit;
-    }
-
-    try
-    {
-        $values = explode(" ", $_SESSION['values']);
-        $red   = $values[0];
-        $green = $values[1];
-        $blue  = $values[2];
-        $threshold = 5;
-
-        $prepare = myPDO::getInstance()->getConnection()->prepare
-        ('select * from images join users on images.userId = users.id
-        where red between :red - :threshold and :red + :threshold 
-        and green between :green - :threshold and :green + :threshold
-        and blue between :blue - :threshold and :blue + :threshold');
-        if ($prepare->execute(array('red' => $red,
-                                    'green' => $green,
-                                    'blue' => $blue, 'threshold' => $threshold)))
+        while ($image = $prepare->fetch(PDO::FETCH_OBJ))
         {
-            $html = "";
-            while ($image = $prepare->fetch(PDO::FETCH_OBJ))
-            {
-                $name = $image->name;
-                $html .= "<div class=\"grid-item\">\n";
-                $html .= "<figure class=\"effect-sadie\">\n";
-                $html .= '<img src="images//' . $image->login . '//' . $image->name .
-                    "\" alt=\"" . $image->name . "\" class=\"img-fluid tm-img\">\n" .
-                    "<figcaption>\n" .
-                    "<h2 class=\"tm-figure-title\">$image->name</h2>" .
-                    "</figcaption>\n</figure>\n</div>";
-            }
+            $name = $image->name;
+            $html .= "<div class=\"grid-item\">\n";
+            $html .= "<figure class=\"effect-sadie\">\n";
+            $html .= '<img src="images//' . $image->login . '//' . $image->name .
+                "\" alt=\"" . $image->name . "\" class=\"img-fluid tm-img\">\n" .
+                "<figcaption>\n" .
+                "<h2 class=\"tm-figure-title\">$image->name</h2>" .
+                "</figcaption>\n</figure>\n</div>";
         }
     }
-    catch(Exception $e)
-    {
-    }
+}
+catch(Exception $e)
+{
+    $html = "";
+    $_SESSION['error'] = 'Une erreur est survenue, veuillez réessayer ulterieurement.';
+}
 ?>
 
 <!DOCTYPE html>
@@ -68,6 +71,7 @@
 
     <?php
         include "header.php";
+        include "error.php";
         echo $html;
     ?>
 
