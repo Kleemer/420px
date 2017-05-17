@@ -3,9 +3,9 @@ require_once 'myAutoLoader.php';
 require_once 'navbar.php';
 require_once 'vendor/autoload.php';
 use ColorThief\ColorThief;
-use Intervention\Image\ImageManagerStatic as Image;
+use Intervention\Image\ImageManagerStatic as ImageManagerStatic;
 
-Image::configure(array('driver' => 'gd'));
+ImageManagerStatic::configure(array('driver' => 'gd'));
 header("Last-Modified: " . gmdate("D, d M Y H:i:s") . " GMT");
 header("Cache-Control: no-store, no-cache, must-revalidate max-age=0");
 header("Cache-Control: post-check=0, pre-check=0", false);
@@ -13,42 +13,76 @@ header("Pragma: no-cache");
 
 session_start();
 
+if (!isset($_SESSION['user']))
+{
+    header('Location:access_refused.php');
+    exit;
+}
+
+
 $actual_link = (isset($_SERVER['HTTPS']) ? "https" : "http") . "://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]";
 $query = parse_url($actual_link, PHP_URL_QUERY);
 $queries = explode("=", $query);
 
 if ($queries[0] === 'id')
-    $_SESSION['imageId'] = $queries[1];
+    if (!isset($_SESSION['image']) || $_SESSION['image']->id !== $queries[1])
+    $_SESSION['image'] = new Image($queries[1], "", array());
+
+if (isset($_POST['undo']))
+{
+    array_pop($_SESSION['image']->filters);
+    if (!isset($_SESSION['image']->filters))
+        $_SESSION['image']->filters = array();
+}
+
+if (isset($_POST['reset']))
+    $_SESSION['image']->filters = array();
+
+if (isset($_POST['delete']))
+{
+    $prepare = myPDO::getInstance()->getConnection()->prepare('delete from images where id = :id');
+    if ($prepare->execute(array('id'=>$_GET['id'])))
+    {
+        unlink($_SESSION['user']->dir.$_SESSION['image']->name);
+        unset($_SESSION['image']);
+        header('Location:gallery.php');
+        exit;
+    }
+}
+
 try
 {
+    var_dump($_SESSION['image']);
     $prepare = myPDO::getInstance()->getConnection()->prepare('select * from images where id = :id');
-    if ($prepare->execute(array('id'=>$_SESSION['imageId'])))
+    if ($prepare->execute(array('id'=>$_SESSION['image']->id)))
     {
         $image = $prepare->fetch(PDO::FETCH_OBJ);
-        $_SESSION['image_name'] = $image->name;
-        $filepath = $_SESSION['user']->dir . $image->name;
+        $_SESSION['image']->name = $image->name;
+
+        $img = ImageManagerStatic::make($_SESSION['user']->dir . $_SESSION['image']->name);
+        Filter::apply_filters($_SESSION['image']->filters, $img);
+        $img->encode('png');
+        $type = 'png';
+        $base64 = 'data:image/' . $type . ';base64,' . base64_encode($img);
 
         $html = "<div style=\"text-align:center\">\n" .
-            '<img src="' . $filepath . " \"/>".
+            '<img src="' . "$base64 \"/>".
             "</div></br>";
-        $html.= generateFilter($image->id);
+
+        $html.= generateFilter();
+
         $html.= "<div style=\"text-align:center\">\n" .
             "<form method=\"post\">
-            <button class=\"button is-primary\"type=\"submit\" name=\"delete\">Supprimer</button>
+            <button class=\"button is-primary\" type=\"submit\" name=\"undo\">Annuler dernier</button>
+            <button class=\"button is-primary\" type=\"submit\" name=\"reset\">Annuler tout</button>
+
+            </form>\n
+            </div></br>";
+        $html.= "<div style=\"text-align:center\">\n" .
+            "<form method=\"post\">
+            <button class=\"button is-danger\" type=\"submit\" name=\"delete\">Supprimer</button>
             </form>\n
             </div>";
-
-        if (isset($_POST['delete']))
-        {
-            $prepare = myPDO::getInstance()->getConnection()->prepare('delete from images where id = :id');
-            if ($prepare->execute(array('id'=>$_GET['id'])))
-            {
-                unlink($_SESSION['user']->dir.$_SESSION['image_name']);
-                unset($_SESSION['image_name']);
-                header('Location:gallery.php');
-                exit;
-            }
-        }
     }
     else
         $html = "There is no image here with this id.";
@@ -60,9 +94,8 @@ catch (Exception $e)
 if (isset($_GET['filter']))
 {
     $filterId = $_GET['filter'];
-    $image = Image::make($_SESSION['user']->dir . $_SESSION['image_name']);
-    $image = Filter::apply_filter($filterId, $image);
-    try
+    array_push($_SESSION['image']->filters, $_GET['filter']);
+    /*try
     {
         $dominantColor = ColorThief::getColor($_SESSION['user']->dir . $_SESSION['image_name']);
         $prepare = myPDO::getInstance()->getConnection()->prepare('update images set red = :red, green = :green, blue = :blue where name = :name and userId = :userId');
@@ -70,12 +103,9 @@ if (isset($_GET['filter']))
     }
     catch (Exception $e)
     {
-    }
+    }*/
 
-    
-    $imageid = $_SESSION['imageId'];
-    unset($_SESSION['imageId']);
-    header('Location:image.php?id='.$imageid);
+    header('Location:image.php?id='.$_SESSION['image']->id);
     exit;
 }
 ?>
