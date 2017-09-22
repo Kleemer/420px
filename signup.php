@@ -6,11 +6,11 @@
     {
         $login = $_POST['login'];
         $password = $_POST['password'];
-
+        
         try
         {
-            $prepare = $connection->prepare('insert into users(login, password) values(:login,:password)');
-
+            $prepare = myPDO::getInstance()->getConnection()->prepare('insert into users(login, password) values(:login,:password)');
+            
             if ($prepare->execute(array('login'=>$login, 'password'=>$password)))
             {
                 mkdir('images//' . $login);
